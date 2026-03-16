@@ -1,0 +1,41 @@
+#!/bin/bash
+
+recursive=0
+
+while getopts "r" option; do
+    case $option in
+        r) recursive=1 ;;
+        *) echo "Invalid option"; exit 1 ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Check if argument is given
+if [ "$1" == "" ]; then
+        echo "No file name provided."
+        exit 1
+fi
+
+target_dir=$(dirname "$original_path")
+
+if [ ! -d "$target_dir" ]; then
+  echo "The original directory does not exist. Creating directory."
+  mkdir -p "$target_dir"
+fi
+
+if [ -e "$original_path" ]; then
+  echo "The file already exists at the original location."
+  read -p "Do you want to overwrite? (y/n): " response
+  if [[ ! "$response" =~ ^[Yy] ]]; then
+    echo "Restore aborted."  # User chose not to overwrite
+    exit 1
+  fi
+fi
+
+# Move the file back to its original location
+mv "$recyclebin/$1" "$original_path"
+
+# Remove the entry from restore info
+sed -i "/^${file_name}_${inode}:/d" "$restore_path"
+
+echo "File restored to $original_path"
